@@ -9,7 +9,7 @@ import { getSurveys, runSurvey, detectSingleImage, computeRoute } from './api';
 import { AlertTriangle, X } from 'lucide-react';
 
 export default function App() {
-  const [view, setView] = useState('dashboard'); // 'dashboard' | 'landing'
+  const [view, setView] = useState('landing'); // 'landing' | 'dashboard'
   const [surveys, setSurveys] = useState([
     { id: 'survey1', name: 'Survey 1', frames: 8 },
     { id: 'survey2', name: 'Survey 2', frames: 8 },

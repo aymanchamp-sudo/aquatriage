@@ -16,7 +16,7 @@ from backend.core import (
     MODEL_PATH, GRID_W, GRID_H,
     colour_correct, run_inference, annotate,
     build_pins, compute_route, lawnmower_path,
-    _encode_img,
+    _encode_img, decode_image_bytes,
 )
 
 # ---------------------------------------------------------------------------
@@ -29,12 +29,24 @@ SURVEYS = {
 START_BUOY = {"x": 40.0, "y": 40.0}
 _MODEL = None
 
+
+def get_model():
+    """Lazily load and cache the YOLO model instance."""
+    global _MODEL
+    if _MODEL is None:
+        from ultralytics import YOLO
+        _MODEL = YOLO(str(MODEL_PATH))
+    return _MODEL
+
+
 # ---------------------------------------------------------------------------
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     global _MODEL
-    from ultralytics import YOLO
-    _MODEL = YOLO(str(MODEL_PATH))
+    try:
+        get_model()
+    except Exception as e:
+        print(f"Warning: could not preload model: {e}")
     yield
     _MODEL = None
 
@@ -82,13 +94,14 @@ def _process_survey(survey_id: str, conf: float, correct: bool) -> dict:
 
     all_imgs_bgr = []
     all_raw_dets = []
+    model = get_model()
     for fp in files:
         img = cv2.imread(str(fp))
         if img is None:
             img = np.zeros((480, 640, 3), dtype=np.uint8)
         all_imgs_bgr.append(img)
         proc = colour_correct(img) if correct else img
-        dets = run_inference(_MODEL, proc, conf)
+        dets = run_inference(model, proc, conf)
         all_raw_dets.append(dets)
 
     area_low, area_high = _area_thresholds(all_raw_dets)
@@ -145,30 +158,57 @@ async def detect_single(
     conf:    float = Form(0.4),
     correct: bool  = Form(True),
 ):
-    data = await image.read()
-    arr  = np.frombuffer(data, np.uint8)
-    img  = cv2.imdecode(arr, cv2.IMREAD_COLOR)
+    try:
+        data = await image.read()
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid image file format or corrupted data")
+
+    if not data or len(data) == 0:
+        raise HTTPException(status_code=400, detail="Invalid image file format or corrupted data")
+
+    try:
+        arr = np.frombuffer(data, np.uint8)
+        img = cv2.imdecode(arr, cv2.IMREAD_COLOR)
+    except Exception:
+        img = None
+
     if img is None:
-        raise HTTPException(400, "Cannot decode image.")
+        raise HTTPException(status_code=400, detail="Invalid image file format or corrupted data")
 
-    raw_b64  = _encode_img(img)
-    proc_img = colour_correct(img) if correct else img
-    dets     = run_inference(_MODEL, proc_img, conf)
-    ann_img  = annotate(proc_img, dets)
-    ann_b64  = _encode_img(ann_img)
+    try:
+        model = get_model()
+    except Exception as e:
+        raise HTTPException(status_code=503, detail=f"Detection model unavailable: {str(e)}")
 
-    h, w = img.shape[:2]
-    areas    = [d["bbox"][2] * d["bbox"][3] for d in dets if d["label"] == "Debris"]
-    area_low  = min(areas) if areas else 0.0
-    area_high = max(areas) if areas else 0.0
-    pin_counter = [0]
-    pins = build_pins(dets, 0, 1, w, h, area_low, area_high, pin_counter)
+    try:
+        raw_b64  = _encode_img(img)
+        proc_img = colour_correct(img) if correct else img
+        dets     = run_inference(model, proc_img, conf)
+        ann_img  = annotate(proc_img, dets)
+        ann_b64  = _encode_img(ann_img)
+
+        h, w = img.shape[:2]
+        areas    = [d["bbox"][2] * d["bbox"][3] for d in dets if d["label"] == "Debris"]
+        area_low  = min(areas) if areas else 0.0
+        area_high = max(areas) if areas else 0.0
+        pin_counter = [0]
+        pins = build_pins(dets, 0, 1, w, h, area_low, area_high, pin_counter)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Inference processing error: {str(e)}")
+
+    frame_obj = {
+        "index":      0,
+        "raw_image":  raw_b64,
+        "image":      ann_b64,
+        "detections": dets,
+    }
 
     return {
         "index":             0,
         "raw_image":         raw_b64,
         "image":             ann_b64,
         "detections":        dets,
+        "frames":            [frame_obj],
         "pins":              pins,
         "start":             START_BUOY,
         "frames_checked":    1,

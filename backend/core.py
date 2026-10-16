@@ -44,27 +44,54 @@ def map_class(cls_name: str) -> Optional[str]:
 
 
 # ---------------------------------------------------------------------------
-# Colour correction
+# Image decoding & Colour correction
 # ---------------------------------------------------------------------------
+def decode_image_bytes(data: bytes) -> Optional[np.ndarray]:
+    """
+    Safely decode raw image bytes into a BGR numpy array using OpenCV.
+    Returns None if bytes are empty or decoding fails.
+    """
+    if not data or not isinstance(data, (bytes, bytearray)):
+        return None
+    try:
+        arr = np.frombuffer(data, np.uint8)
+        if arr.size == 0:
+            return None
+        img = cv2.imdecode(arr, cv2.IMREAD_COLOR)
+        return img
+    except Exception:
+        return None
+
+
 def colour_correct(img_bgr: np.ndarray) -> np.ndarray:
     """Gray-world white balance + red-channel boost + CLAHE on L channel."""
-    b, g, r = cv2.split(img_bgr.astype(np.float32))
-    mean_b, mean_g, mean_r = b.mean(), g.mean(), r.mean()
-    mean_all = (mean_b + mean_g + mean_r) / 3.0
-    if mean_b > 0 and mean_g > 0 and mean_r > 0:
-        b = np.clip(b * (mean_all / mean_b), 0, 255)
-        g = np.clip(g * (mean_all / mean_g), 0, 255)
-        r = np.clip(r * (mean_all / mean_r), 0, 255)
-    # Red-channel boost for underwater red-attenuation
-    r = np.clip(r * 1.4, 0, 255)
-    img_bgr = cv2.merge([b, g, r]).astype(np.uint8)
-    # CLAHE on L channel
-    lab = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2LAB)
-    l_ch, a_ch, b_ch = cv2.split(lab)
-    clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
-    l_ch = clahe.apply(l_ch)
-    lab = cv2.merge([l_ch, a_ch, b_ch])
-    return cv2.cvtColor(lab, cv2.COLOR_LAB2BGR)
+    if img_bgr is None or not isinstance(img_bgr, np.ndarray) or img_bgr.size == 0:
+        return img_bgr
+    try:
+        if len(img_bgr.shape) == 2:
+            img_bgr = cv2.cvtColor(img_bgr, cv2.COLOR_GRAY2BGR)
+        elif len(img_bgr.shape) == 3 and img_bgr.shape[2] == 4:
+            img_bgr = cv2.cvtColor(img_bgr, cv2.COLOR_BGRA2BGR)
+
+        b, g, r = cv2.split(img_bgr.astype(np.float32))
+        mean_b, mean_g, mean_r = b.mean(), g.mean(), r.mean()
+        mean_all = (mean_b + mean_g + mean_r) / 3.0
+        if mean_b > 0 and mean_g > 0 and mean_r > 0:
+            b = np.clip(b * (mean_all / mean_b), 0, 255)
+            g = np.clip(g * (mean_all / mean_g), 0, 255)
+            r = np.clip(r * (mean_all / mean_r), 0, 255)
+        # Red-channel boost for underwater red-attenuation
+        r = np.clip(r * 1.4, 0, 255)
+        img_bgr = cv2.merge([b, g, r]).astype(np.uint8)
+        # CLAHE on L channel
+        lab = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2LAB)
+        l_ch, a_ch, b_ch = cv2.split(lab)
+        clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+        l_ch = clahe.apply(l_ch)
+        lab = cv2.merge([l_ch, a_ch, b_ch])
+        return cv2.cvtColor(lab, cv2.COLOR_LAB2BGR)
+    except Exception:
+        return img_bgr
 
 
 # ---------------------------------------------------------------------------

@@ -144,3 +144,46 @@ class TestLawnmower:
             for i in range(len(path) - 1)
         )
         assert total > 0
+
+
+# ── 8. /api/detect endpoint tests ───────────────────────────────────────────
+class TestDetectEndpoint:
+    @pytest.fixture
+    def client(self):
+        from fastapi.testclient import TestClient
+        from backend.main import app
+        return TestClient(app)
+
+    def test_detect_corrupted_image(self, client):
+        res = client.post(
+            "/api/detect",
+            files={"image": ("download.jpg", b"not_an_image_file_content", "image/jpeg")},
+        )
+        assert res.status_code == 400
+        assert res.json()["detail"] == "Invalid image file format or corrupted data"
+
+    def test_detect_empty_file(self, client):
+        res = client.post(
+            "/api/detect",
+            files={"image": ("empty.jpg", b"", "image/jpeg")},
+        )
+        assert res.status_code == 400
+        assert res.json()["detail"] == "Invalid image file format or corrupted data"
+
+    def test_detect_valid_image(self, client):
+        import cv2
+        import numpy as np
+        img = np.zeros((120, 160, 3), dtype=np.uint8)
+        _, buf = cv2.imencode(".jpg", img)
+        res = client.post(
+            "/api/detect",
+            files={"image": ("download.jpg", buf.tobytes(), "image/jpeg")},
+            data={"conf": "0.4", "correct": "true"},
+        )
+        assert res.status_code == 200
+        data = res.json()
+        assert "detections" in data
+        assert "pins" in data
+        assert "frames" in data
+        assert len(data["frames"]) == 1
+
