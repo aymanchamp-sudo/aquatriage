@@ -1,0 +1,1 @@
+# pytest root conftest – enables backend package import

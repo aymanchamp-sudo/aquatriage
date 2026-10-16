@@ -1,0 +1,35 @@
+{
+  "frames_checked": 6,
+  "marine_life_count": 0,
+  "frames": [
+    {
+      "index": 0,
+      "detections": []
+    },
+    {
+      "index": 1,
+      "detections": []
+    },
+    {
+      "index": 2,
+      "detections": []
+    },
+    {
+      "index": 3,
+      "detections": []
+    },
+    {
+      "index": 4,
+      "detections": []
+    },
+    {
+      "index": 5,
+      "detections": []
+    }
+  ],
+  "pins": [],
+  "start": {
+    "x": 40.0,
+    "y": 40.0
+  }
+}

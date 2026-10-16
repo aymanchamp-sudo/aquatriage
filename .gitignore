@@ -1,0 +1,11 @@
+.venv/
+node_modules/
+__pycache__/
+*.pyc
+dist/
+.env
+runs/
+trashcan/
+.cache/
+backend/models/*.pt
+backend/samples/

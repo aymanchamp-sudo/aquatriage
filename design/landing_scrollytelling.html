@@ -1,0 +1,893 @@
+<!DOCTYPE html>
+
+<html class="dark scroll-smooth" lang="en" style="background-color: #070B14; color: #F8FAFC; min-height: 100vh; height: auto;"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>AquaTriage — Autonomous Marine Triage &amp; Bathymetric Telemetry Architecture</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600;700&amp;family=Plus+Jakarta+Sans:wght@500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "on-primary": "#00363a",
+            "secondary": "#4edea3",
+            "secondary-fixed-dim": "#4edea3",
+            "primary-fixed-dim": "#00dbe9",
+            "primary-fixed": "#7df4ff",
+            "error-container": "#93000a",
+            "on-primary-fixed-variant": "#004f54",
+            "on-background": "#dde2f3",
+            "on-secondary-container": "#00311f",
+            "secondary-fixed": "#6ffbbe",
+            "surface-container-low": "#161c28",
+            "error": "#ffb4ab",
+            "inverse-surface": "#dde2f3",
+            "surface-container-lowest": "#080e1a",
+            "outline-variant": "#3b494b",
+            "surface-container-highest": "#2f3542",
+            "secondary-container": "#00a572",
+            "primary": "#dbfcff",
+            "surface": "#0e131f",
+            "on-primary-container": "#006970",
+            "tertiary-container": "#ffcdcf",
+            "on-secondary-fixed": "#002113",
+            "tertiary-fixed": "#ffdadb",
+            "on-surface-variant": "#b9cacb",
+            "surface-dim": "#0e131f",
+            "tertiary": "#fff3f2",
+            "on-secondary-fixed-variant": "#005236",
+            "on-secondary": "#003824",
+            "surface-tint": "#00dbe9",
+            "on-tertiary-fixed-variant": "#92002a",
+            "outline": "#849495",
+            "surface-container-high": "#242a36",
+            "surface-variant": "#2f3542",
+            "on-error": "#690005",
+            "background": "#070B14",
+            "on-tertiary": "#67001b",
+            "on-tertiary-fixed": "#40000d",
+            "inverse-primary": "#006970",
+            "surface-container": "#1a202c",
+            "inverse-on-surface": "#2b303d",
+            "on-error-container": "#ffdad6",
+            "primary-container": "#00f0ff",
+            "surface-bright": "#343946",
+            "on-tertiary-container": "#bc0b3b",
+            "tertiary-fixed-dim": "#ffb2b7",
+            "on-primary-fixed": "#002022",
+            "on-surface": "#dde2f3"
+          },
+          fontFamily: {
+            "telemetry-lg": ["JetBrains Mono", "monospace"],
+            "display-hero": ["Plus Jakarta Sans", "sans-serif"],
+            "label-caps": ["JetBrains Mono", "monospace"],
+            "headline-md": ["Plus Jakarta Sans", "sans-serif"],
+            "telemetry-sm": ["JetBrains Mono", "monospace"],
+            "headline-sm": ["Plus Jakarta Sans", "sans-serif"],
+            "telemetry-md": ["JetBrains Mono", "monospace"],
+            "body-lg": ["Inter", "sans-serif"],
+            "headline-lg-mobile": ["Plus Jakarta Sans", "sans-serif"],
+            "body-md": ["Inter", "sans-serif"],
+            "display-hero-mobile": ["Plus Jakarta Sans", "sans-serif"],
+            "headline-lg": ["Plus Jakarta Sans", "sans-serif"]
+          }
+        }
+      }
+    };
+  </script>
+<style>
+    /* Smooth presentation snap scrolling */
+    html {
+      scroll-snap-type: y proximity;
+      scroll-behavior: smooth;
+    }
+    .snap-depth-section {
+      scroll-snap-align: start;
+      scroll-margin-top: 72px;
+    }
+
+    /* Optimized performant glassmorphism for laptop GPUs & projectors */
+    .glass-panel {
+      background: rgba(10, 20, 34, 0.82);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border: 1px solid rgba(0, 240, 255, 0.22);
+      box-shadow: 0 10px 30px -4px rgba(0, 0, 0, 0.55);
+      transition: border-color 0.25s ease, transform 0.25s ease;
+    }
+    .glass-panel:hover {
+      border-color: rgba(0, 240, 255, 0.45);
+      transform: translateY(-2px);
+    }
+    .glass-card-subtle {
+      background: rgba(14, 25, 42, 0.75);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      border: 1px solid rgba(0, 240, 255, 0.18);
+      box-shadow: 0 6px 20px -2px rgba(0, 0, 0, 0.45);
+      transition: border-color 0.25s ease, transform 0.25s ease;
+    }
+    .glass-card-subtle:hover {
+      border-color: rgba(78, 222, 163, 0.45);
+      transform: translateY(-2px);
+    }
+
+    /* Fixed chrome high-blur */
+    .glass-nav {
+      background: rgba(7, 11, 20, 0.88);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+    }
+    .glass-gauge {
+      background: rgba(8, 18, 32, 0.92);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+    }
+
+    /* Ambient microbubbles floating animation */
+    @keyframes float-up {
+      0% {
+        transform: translateY(105%) translateX(0px) scale(0.85);
+        opacity: 0;
+      }
+      20% {
+        opacity: 0.65;
+      }
+      80% {
+        opacity: 0.6;
+      }
+      100% {
+        transform: translateY(-40px) translateX(20px) scale(1.15);
+        opacity: 0;
+      }
+    }
+    .bubble {
+      position: absolute;
+      border-radius: 9999px;
+      pointer-events: none;
+      background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.85), rgba(0, 240, 255, 0.35) 60%, rgba(0, 105, 112, 0.2) 100%);
+      box-shadow: 0 0 6px rgba(0, 240, 255, 0.4);
+      animation: float-up infinite linear;
+    }
+
+    /* Subtle scanning line */
+    @keyframes scanline {
+      0% { transform: translateY(-100%); }
+      100% { transform: translateY(1000%); }
+    }
+    .scan-beam {
+      position: absolute;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, rgba(0, 240, 255, 0.85), transparent);
+      box-shadow: 0 0 10px rgba(0, 240, 255, 0.55);
+      animation: scanline 4.5s linear infinite;
+      pointer-events: none;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .bubble, .scan-beam {
+        animation: none !important;
+        display: none !important;
+      }
+      .glass-panel:hover, .glass-card-subtle:hover {
+        transform: none !important;
+      }
+    }
+  </style>
+</head>
+<body class="bg-[#070B14] font-['Inter'] text-[#F8FAFC] antialiased min-h-screen selection:bg-cyan-500 selection:text-black relative" style="background-color: #070B14; color: #F8FAFC; min-height: 100vh; height: auto; overflow-y: auto;">
+<!-- ==========================================
+     PERSISTENT TOP GLASSMORPHIC NAVBAR
+     ========================================== -->
+<header class="fixed top-0 left-0 right-0 z-50 glass-nav border-b border-cyan-500/25 shadow-[0_4px_25px_rgba(0,0,0,0.6)]">
+<div class="h-16 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-4">
+<!-- Logo + Identity -->
+<a class="flex items-center gap-3 shrink-0 group" href="#sec-surface">
+<div class="w-10 h-10 rounded-lg bg-cyan-500/15 border border-cyan-400/50 flex items-center justify-center text-cyan-300 group-hover:border-cyan-300 group-hover:shadow-[0_0_15px_rgba(0,240,255,0.45)] transition-all">
+<span class="material-symbols-outlined text-[24px]">radar</span>
+</div>
+<div class="flex flex-col">
+<div class="flex items-center gap-2">
+<span class="font-['Plus_Jakarta_Sans'] font-extrabold text-lg tracking-tight text-white drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)]">AQUATRIAGE</span>
+<span class="inline-flex px-2 py-0.5 rounded text-xs font-['JetBrains_Mono'] font-bold bg-[#0F172A] text-cyan-300 border border-cyan-500/40 uppercase tracking-wide">ROV-AI</span>
+</div>
+<span class="text-xs font-['JetBrains_Mono'] text-slate-300 tracking-wider hidden sm:block">BATHYMETRIC MISSION ENGINE</span>
+</div>
+</a>
+<!-- Anchor Navigation Jump Links -->
+<nav class="hidden md:flex items-center gap-1.5 bg-[#0A1628]/90 backdrop-blur-md p-1 rounded-full border border-cyan-500/30 shadow-inner">
+<a class="px-4 py-1.5 rounded-full font-['JetBrains_Mono'] text-xs font-semibold uppercase tracking-wider text-cyan-200 hover:text-white hover:bg-cyan-500/25 hover:shadow-[0_0_10px_rgba(0,240,255,0.3)] transition-all" href="#sec-surface">0m Surface</a>
+<a class="px-4 py-1.5 rounded-full font-['JetBrains_Mono'] text-xs font-semibold uppercase tracking-wider text-slate-200 hover:text-white hover:bg-slate-800 transition-all" href="#sec-twilight">8m Twilight</a>
+<a class="px-4 py-1.5 rounded-full font-['JetBrains_Mono'] text-xs font-semibold uppercase tracking-wider text-slate-200 hover:text-white hover:bg-slate-800 transition-all" href="#sec-murky">16m Murky AI</a>
+<a class="px-4 py-1.5 rounded-full font-['JetBrains_Mono'] text-xs font-semibold uppercase tracking-wider text-emerald-300 hover:text-emerald-200 hover:bg-emerald-500/25 transition-all" href="#sec-seafloor">25m Seafloor (TSP)</a>
+</nav>
+<!-- System Status & Command CTA -->
+<div class="flex items-center gap-3">
+<div class="hidden xl:flex items-center gap-2 bg-[#0A192F]/90 px-3.5 py-1.5 rounded-lg border border-cyan-500/30 shadow-sm">
+<span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+<span class="font-['JetBrains_Mono'] text-xs text-slate-200">STATUS: <span class="text-emerald-300 font-semibold">ROV-01 ONLINE</span></span>
+</div>
+<a class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-cyan-400 text-slate-950 font-['JetBrains_Mono'] text-xs font-bold uppercase tracking-wider shadow-[0_0_20px_rgba(34,211,238,0.45)] hover:bg-cyan-300 hover:shadow-[0_0_28px_rgba(34,211,238,0.7)] active:scale-95 transition-all" href="#sec-seafloor">
+<span class="material-symbols-outlined text-[18px]">terminal</span>
+<span class="whitespace-nowrap">Command Center</span>
+</a>
+</div>
+</div>
+</header>
+<!-- ==========================================
+     DYNAMIC & INTERACTIVE DEPTH & PRESSURE GAUGE
+     ========================================== -->
+<aside aria-label="Bathymetric Telemetry Tracker" class="fixed right-3 md:right-6 top-1/2 -translate-y-1/2 z-40 hidden sm:flex flex-col items-end select-none">
+<!-- Active Depth Floating Callout Badge -->
+<div class="mb-2 bg-[#081525] border border-cyan-400/60 rounded-xl px-3 py-1.5 shadow-[0_0_18px_rgba(0,240,255,0.35)] flex items-center gap-2.5 transition-transform duration-75" id="activeDepthBadge">
+<span class="w-2 h-2 rounded-full bg-cyan-300 animate-ping"></span>
+<span class="font-['JetBrains_Mono'] text-sm font-extrabold text-white tracking-wide" id="activeDepthValue">0.0 m</span>
+<span class="text-cyan-500/60 font-mono text-xs">|</span>
+<span class="font-['JetBrains_Mono'] text-xs font-bold text-cyan-300" id="activePressureValue">1.00 ATA</span>
+</div>
+<!-- Gauge Panel -->
+<div class="w-20 md:w-24 rounded-2xl glass-gauge border border-cyan-500/35 p-3.5 shadow-[0_16px_40px_rgba(0,0,0,0.75)] flex flex-col items-center">
+<div class="w-full text-center pb-2 mb-2 border-b border-cyan-500/25">
+<span class="block font-['JetBrains_Mono'] text-xs text-cyan-300 uppercase tracking-widest font-bold">DEPTH</span>
+<span class="text-[11px] font-['JetBrains_Mono'] text-emerald-400 font-semibold">LIVE ROV</span>
+</div>
+<!-- Interactive Track Rail -->
+<div aria-label="Ocean Depth Controller" aria-valuemax="25" aria-valuemin="0" aria-valuenow="0" class="relative w-3.5 h-64 md:h-72 rounded-full bg-slate-900 border border-cyan-500/40 cursor-pointer overflow-visible my-1 outline-none focus:ring-2 focus:ring-cyan-400" id="depthRail" role="slider" tabindex="0">
+<div class="absolute inset-0 rounded-full bg-gradient-to-b from-cyan-400 via-sky-600 to-emerald-500 opacity-80 pointer-events-none"></div>
+<!-- Interactive Knob -->
+<div class="absolute left-1/2 -translate-x-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-cyan-300 border-2 border-[#070B14] shadow-[0_0_16px_#22d3ee] flex items-center justify-center cursor-grab active:cursor-grabbing z-20 hover:scale-110 transition-transform" id="depthTrackerKnob" style="top: 0%;">
+<span class="w-2 h-2 rounded-full bg-slate-950"></span>
+</div>
+</div>
+<!-- Depth Station Checkpoints -->
+<div class="w-full flex flex-col gap-3 pt-3 text-center text-xs font-['JetBrains_Mono']">
+<a class="group flex flex-col items-center hover:opacity-100 transition-opacity" href="#sec-surface" title="Jump to 0m Surface">
+<span class="text-cyan-200 font-bold group-hover:text-cyan-100">0.0m</span>
+<span class="text-slate-300 text-[11px]">1.0 ATA</span>
+</a>
+<a class="group flex flex-col items-center hover:opacity-100 transition-opacity" href="#sec-twilight" title="Jump to 8m Twilight">
+<span class="text-sky-200 font-bold group-hover:text-sky-100">8.0m</span>
+<span class="text-slate-300 text-[11px]">1.8 ATA</span>
+</a>
+<a class="group flex flex-col items-center hover:opacity-100 transition-opacity" href="#sec-murky" title="Jump to 16m Murky AI">
+<span class="text-indigo-200 font-bold group-hover:text-indigo-100">16.0m</span>
+<span class="text-slate-300 text-[11px]">2.6 ATA</span>
+</a>
+<a class="group flex flex-col items-center hover:opacity-100 transition-opacity" href="#sec-seafloor" title="Jump to 25m Seafloor">
+<span class="text-emerald-300 font-bold group-hover:text-emerald-200">25.0m</span>
+<span class="text-slate-300 text-[11px]">3.5 ATA</span>
+</a>
+</div>
+<div class="mt-3 pt-2 w-full text-center border-t border-cyan-500/25">
+<span class="block text-[11px] font-['JetBrains_Mono'] text-slate-300">PPO₂: 1.38</span>
+<span class="block text-xs font-['JetBrains_Mono'] text-cyan-300 font-bold">1025 kg/m³</span>
+</div>
+</div>
+</aside>
+<!-- ==========================================
+     MAIN SCROLLYTELLING CONTAINER
+     ========================================== -->
+<main class="w-full pt-16 relative">
+<!-- ==========================================
+     SECTION 1 — 0.0m SURFACE ZONE (HERO CINEMATIC)
+     ========================================== -->
+<section class="snap-depth-section min-h-[94vh] flex items-center justify-center relative overflow-hidden px-4 sm:px-6 lg:px-8 py-16" id="sec-surface" style="background-image: url('https://lh3.googleusercontent.com/aida/AEtjO1V7ztzygqrNz6OT9sKzGiJR32hrOFVW0zi2ncQ9Ox3tO3OOfT3KG5R_9mMM448T5Y-rT0YoC-2yyLL78o6OaMBy6ZVQNxaZ5zrfbGN2Euf56Ive32xJsYk4ALzFiQ_qbMjeX_3d_24eMyWHP1YlaHmcDC6qA7ghbrQFKC86-i6mINTE5YiVzJ2OWIbRJS3DJHcsVrVnDrqL5X14iVcGLUhYVl27Zy1Xqzp544Gf0rbTlSjGOWfHUTUJ3cU'); background-size: cover; background-position: center right; background-repeat: no-repeat;">
+<!-- Multilayered cinematic underwater gradient overlays for perfect UI readability -->
+<div class="absolute inset-0 pointer-events-none" style="background: linear-gradient(to right, rgba(7, 11, 20, 0.95) 0%, rgba(7, 11, 20, 0.88) 42%, rgba(7, 11, 20, 0.62) 75%, rgba(7, 11, 20, 0.35) 100%), linear-gradient(to bottom, rgba(7, 11, 20, 0.55) 0%, transparent 40%, rgba(7, 11, 20, 0.96) 100%);"></div>
+<!-- Volumetric light caustic simulation overlay -->
+<div class="absolute inset-0 pointer-events-none opacity-30 mix-blend-screen overflow-hidden">
+<svg class="w-full h-full" fill="none" preserveaspectratio="none" viewbox="0 0 1440 900">
+<defs>
+<radialgradient cx="55%" cy="8%" id="heroCausticLight" r="75%">
+<stop offset="0%" stop-color="#38bdf8" stop-opacity="0.6"></stop>
+<stop offset="50%" stop-color="#0284c7" stop-opacity="0.25"></stop>
+<stop offset="100%" stop-color="#070B14" stop-opacity="0"></stop>
+</radialgradient>
+<lineargradient id="heroRay1" x1="45%" x2="65%" y1="0%" y2="100%">
+<stop offset="0%" stop-color="#7df4ff" stop-opacity="0.4"></stop>
+<stop offset="70%" stop-color="#070B14" stop-opacity="0"></stop>
+</lineargradient>
+<lineargradient id="heroRay2" x1="70%" x2="80%" y1="0%" y2="100%">
+<stop offset="0%" stop-color="#38bdf8" stop-opacity="0.35"></stop>
+<stop offset="75%" stop-color="#070B14" stop-opacity="0"></stop>
+</lineargradient>
+</defs>
+<rect fill="url(#heroCausticLight)" height="900" width="1440"></rect>
+<polygon fill="url(#heroRay1)" points="520,0 660,0 890,900 680,900"></polygon>
+<polygon fill="url(#heroRay2)" points="980,0 1140,0 1260,900 1020,900"></polygon>
+</svg>
+</div>
+<!-- Rising ambient microbubbles -->
+<div aria-hidden="true" class="absolute inset-0 pointer-events-none overflow-hidden">
+<div class="bubble w-2 h-2 left-[15%] bottom-0" style="animation-duration: 9s; animation-delay: 0.5s;"></div>
+<div class="bubble w-3 h-3 left-[28%] bottom-0" style="animation-duration: 12s; animation-delay: 2.5s;"></div>
+<div class="bubble w-1.5 h-1.5 left-[42%] bottom-0" style="animation-duration: 8s; animation-delay: 1.2s;"></div>
+<div class="bubble w-2.5 h-2.5 left-[64%] bottom-0" style="animation-duration: 11s; animation-delay: 3.8s;"></div>
+<div class="bubble w-3.5 h-3.5 left-[78%] bottom-0" style="animation-duration: 14s; animation-delay: 0.2s;"></div>
+</div>
+<!-- Hero Core Content -->
+<div class="relative z-10 max-w-5xl mx-auto flex flex-col items-center text-center">
+<!-- Telemetry Pill Badge (Simplified & High Contrast) -->
+<div class="inline-flex items-center gap-2.5 px-4 py-2 rounded-full bg-[#081525]/90 border border-cyan-400/50 backdrop-blur-md shadow-[0_4px_20px_rgba(0,0,0,0.6)] mb-6">
+<span class="w-2.5 h-2.5 rounded-full bg-cyan-300 animate-pulse shadow-[0_0_10px_#22d3ee]"></span>
+<span class="font-['JetBrains_Mono'] text-[13px] font-semibold text-cyan-200 tracking-wider uppercase">OPEN-SOURCE SEACLEAR AI + ROV TELEMETRY</span>
+</div>
+<!-- Punchy Headline -->
+<h1 class="font-['Plus_Jakarta_Sans'] text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-white max-w-4xl leading-[1.15] drop-shadow-[0_2px_14px_rgba(0,0,0,0.85)]">
+  70% of Ocean Plastic Sinks Beyond Satellite Reach.
+  <span class="block mt-2 text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 via-sky-200 to-emerald-400 drop-shadow-[0_0_24px_rgba(0,240,255,0.4)]">
+    We Map and Triage It.
+  </span>
+</h1>
+<!-- Supporting Text: Exactly 2 clean, readable lines -->
+<p class="font-['Inter'] text-base sm:text-lg text-slate-200 max-w-3xl mt-6 leading-relaxed drop-shadow-[0_1px_4px_rgba(0,0,0,0.9)]">
+  AquaTriage pairs low-cost micro-ROVs with Generative AI dehazing and YOLOv8 models to calculate energy-optimal benthic salvage routes in turbid waters.
+</p>
+<!-- Two Prominent CTA Buttons -->
+<div class="flex flex-wrap items-center justify-center gap-4 mt-8">
+<a class="inline-flex items-center gap-2 px-6 py-3.5 rounded-xl bg-cyan-400 text-slate-950 font-['JetBrains_Mono'] text-sm uppercase font-bold shadow-[0_0_25px_rgba(34,211,238,0.55)] hover:bg-cyan-300 hover:shadow-[0_0_35px_rgba(34,211,238,0.75)] active:scale-95 transition-all" href="#sec-seafloor">
+<span class="material-symbols-outlined text-[20px]">radar</span>
+<span>Enter Live Command Center</span>
+<span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+</a>
+<a class="inline-flex items-center gap-2 px-6 py-3.5 rounded-xl bg-[#08182B]/85 backdrop-blur-md border border-cyan-400/60 text-cyan-200 font-['JetBrains_Mono'] text-sm uppercase font-semibold tracking-wider hover:bg-cyan-500/25 hover:text-white hover:border-cyan-300 shadow-lg transition-all" href="#sec-twilight">
+<span class="material-symbols-outlined text-[18px] text-cyan-300 animate-bounce">south</span>
+<span>Scroll to Dive (0m → 25m)</span>
+</a>
+</div>
+<!-- Streamlined 3-Metric Stat Bar -->
+<div class="w-full max-w-3xl grid grid-cols-1 sm:grid-cols-3 gap-4 mt-12 p-3 sm:p-4 rounded-2xl glass-panel">
+<div class="flex flex-col items-center text-center p-3 sm:p-4 rounded-xl glass-card-subtle">
+<span class="font-['Plus_Jakarta_Sans'] text-3xl sm:text-4xl font-extrabold text-cyan-300">89.4%</span>
+<span class="font-['JetBrains_Mono'] text-xs text-slate-200 font-medium mt-1">YOLOv8m mAP@50 Detection</span>
+</div>
+<div class="flex flex-col items-center text-center p-3 sm:p-4 rounded-xl glass-card-subtle">
+<span class="font-['Plus_Jakarta_Sans'] text-3xl sm:text-4xl font-extrabold text-emerald-400">-72%</span>
+<span class="font-['JetBrains_Mono'] text-xs text-slate-200 font-medium mt-1">Diver Swim Distance Saved</span>
+</div>
+<div class="flex flex-col items-center text-center p-3 sm:p-4 rounded-xl glass-card-subtle">
+<span class="font-['Plus_Jakarta_Sans'] text-3xl sm:text-4xl font-extrabold text-sky-200">40+</span>
+<span class="font-['JetBrains_Mono'] text-xs text-slate-200 font-medium mt-1">Classified Benthic Debris Types</span>
+</div>
+</div>
+</div>
+</section>
+<!-- ==========================================
+     SECTION 2 — 8.0m TWILIGHT ZONE (THE BOTTLENECK)
+     ========================================== -->
+<section class="snap-depth-section min-h-screen py-24 relative px-4 sm:px-6 lg:px-8 flex flex-col justify-center border-t border-cyan-900/30" id="sec-twilight" style="background: linear-gradient(180deg, #081423 0%, #06111f 45%, #050c18 100%);">
+<div class="absolute inset-0 pointer-events-none opacity-20 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-cyan-900/40 via-transparent to-transparent"></div>
+<div class="max-w-6xl mx-auto w-full relative z-10">
+<!-- Depth Indicator Ribbon -->
+<div class="flex items-center gap-3 mb-8">
+<span class="px-3.5 py-1.5 rounded-full bg-rose-500/20 border border-rose-500/50 text-rose-200 font-['JetBrains_Mono'] text-xs font-semibold tracking-wider uppercase inline-flex items-center gap-2 shadow-sm">
+<span class="material-symbols-outlined text-[18px] text-rose-300">warning</span>
+DEPTH: 8.0m // ZONE: MESOPELAGIC TWILIGHT // PRESSURE: 1.80 ATA
+</span>
+<div class="h-px flex-1 bg-gradient-to-r from-rose-500/40 via-slate-800 to-transparent"></div>
+</div>
+<!-- 2-Column Grid -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
+<!-- Left Column: Problem Formulation -->
+<div class="lg:col-span-6 flex flex-col">
+<div class="flex items-center gap-2 text-rose-300 mb-2">
+<span class="material-symbols-outlined text-[20px]">compress</span>
+<span class="font-['JetBrains_Mono'] text-xs uppercase tracking-widest font-bold">THE BIOLOGICAL BOTTLENECK</span>
+</div>
+<h2 class="font-['Plus_Jakarta_Sans'] text-3xl sm:text-4xl font-extrabold text-white tracking-tight leading-snug">
+  Divers Run Out of Tank Gas Before Finding the Trash.
+</h2>
+<p class="font-['Inter'] text-base text-slate-200 mt-4 leading-relaxed">
+  Underwater physics operates without compromise: by 8 to 10 meters, ambient pressure nearly doubles, accelerating breathing air consumption according to Boyle’s Law. In murky ports and harbor estuaries, salvage divers conduct blind sweep patterns with under 1.5 meters of optical visibility, exhausting up to 70% of cylinder pressure navigating barren silt before discovering a single derelict net or toxic lead battery.
+</p>
+<!-- 3 Metric Callouts (Upgraded Contrast & Font Sizes) -->
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-3.5 mt-8">
+<div class="p-4 rounded-xl bg-[#0b172a]/85 border border-rose-500/40 flex flex-col shadow-lg">
+<span class="font-['Plus_Jakarta_Sans'] text-3xl font-extrabold text-rose-300">68%</span>
+<span class="font-['Plus_Jakarta_Sans'] text-sm font-semibold text-white mt-1">Air Wasted</span>
+<span class="font-['JetBrains_Mono'] text-xs text-slate-300 mt-1 leading-snug">Non-convergent, disoriented search sweeps.</span>
+</div>
+<div class="p-4 rounded-xl bg-[#0b172a]/85 border border-amber-500/40 flex flex-col shadow-lg">
+<span class="font-['Plus_Jakarta_Sans'] text-3xl font-extrabold text-amber-200">&lt;1.8m</span>
+<span class="font-['Plus_Jakarta_Sans'] text-sm font-semibold text-white mt-1">Harbor Visibility</span>
+<span class="font-['JetBrains_Mono'] text-xs text-slate-300 mt-1 leading-snug">Suspended silt blocks diver headlamps.</span>
+</div>
+<div class="p-4 rounded-xl bg-[#0b172a]/85 border border-rose-500/40 flex flex-col shadow-lg">
+<span class="font-['Plus_Jakarta_Sans'] text-3xl font-extrabold text-rose-300">3.2x</span>
+<span class="font-['Plus_Jakarta_Sans'] text-sm font-semibold text-white mt-1">Decomp Hazard</span>
+<span class="font-['JetBrains_Mono'] text-xs text-slate-300 mt-1 leading-snug">Nitrogen saturation on fruitless searches.</span>
+</div>
+</div>
+</div>
+<!-- Right Column: Visual Comparison Card -->
+<div class="lg:col-span-6">
+<div class="w-full rounded-2xl glass-panel p-5 relative overflow-hidden">
+<div class="flex items-center justify-between pb-3 mb-3 border-b border-cyan-500/20">
+<div class="flex items-center gap-2">
+<span class="w-2.5 h-2.5 rounded-full bg-rose-400 animate-ping"></span>
+<span class="font-['JetBrains_Mono'] text-xs text-rose-300 uppercase font-bold tracking-wider">Traditional Blind Grid Search</span>
+</div>
+<span class="px-2.5 py-1 rounded bg-rose-500/25 text-rose-200 border border-rose-500/40 font-['JetBrains_Mono'] text-xs font-bold">ABORTED // AIR CRITICAL</span>
+</div>
+<!-- SVG Visual of Failed Erratic Search Track -->
+<div class="relative w-full h-72 rounded-xl bg-[#040810] border border-cyan-500/25 overflow-hidden flex items-center justify-center p-2 shadow-inner">
+<div class="scan-beam"></div>
+<svg class="w-full h-full" fill="none" viewbox="0 0 460 260">
+<defs>
+<pattern height="24" id="siltGrid" patternunits="userSpaceOnUse" width="24">
+<path d="M 24 0 L 0 0 0 24" fill="none" stroke="#18273f" stroke-width="0.8"></path>
+</pattern>
+</defs>
+<rect fill="url(#siltGrid)" height="260" width="460"></rect>
+<path d="M 40 40 L 80 180 L 130 90 L 165 210 L 195 140 L 230 230 L 260 80 L 300 170 L 335 60 L 350 195" fill="none" stroke="#f43f5e" stroke-dasharray="6 4" stroke-linecap="round" stroke-width="2.5"></path>
+<circle cx="95" cy="70" fill="#f43f5e" opacity="0.3" r="7"></circle>
+<circle cx="95" cy="70" fill="#f43f5e" r="3.5"></circle>
+<text fill="#fca5a5" font-family="JetBrains Mono" font-size="11" font-weight="600" x="108" y="74">OBJ #01 (MISSED)</text>
+<circle cx="390" cy="115" fill="#f43f5e" opacity="0.3" r="7"></circle>
+<circle cx="390" cy="115" fill="#f43f5e" r="3.5"></circle>
+<text fill="#fca5a5" font-family="JetBrains Mono" font-size="11" font-weight="600" x="305" y="119">OBJ #02 (MISSED)</text>
+<circle cx="215" cy="50" fill="#f43f5e" opacity="0.3" r="7"></circle>
+<circle cx="215" cy="50" fill="#f43f5e" r="3.5"></circle>
+<text fill="#fca5a5" font-family="JetBrains Mono" font-size="11" font-weight="600" x="228" y="54">GHOST NET (MISSED)</text>
+<circle class="animate-pulse" cx="350" cy="195" fill="#f43f5e" r="9"></circle>
+<circle cx="350" cy="195" fill="#fff" r="4"></circle>
+<text fill="#fee2e2" font-family="JetBrains Mono" font-size="11" font-weight="700" x="210" y="228">DIVER ABORT: 24 BAR REMAINING</text>
+</svg>
+<div class="absolute bottom-3 left-3 right-3 p-2.5 rounded-lg bg-[#081322]/95 border border-rose-500/50 flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-rose-300 text-[18px]">severe_cold</span>
+<span class="font-['JetBrains_Mono'] text-xs text-rose-200 font-bold">215 BAR Air Consumed — Mission Aborted</span>
+</div>
+<span class="font-['JetBrains_Mono'] text-xs text-slate-300 font-semibold">AREA: 14%</span>
+</div>
+</div>
+<div class="mt-3 flex items-center justify-between font-['JetBrains_Mono'] text-xs text-slate-300">
+<span>ESTIMATED SWIM TRACK: <strong class="text-white">310 METERS</strong></span>
+<span class="text-rose-300 font-bold">DEBRIS EXTRACTED: 0.0 KG</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- ==========================================
+     SECTION 3 — 16.0m MURKY ZONE (AI DEHAZING & YOLOV8)
+     ========================================== -->
+<section class="snap-depth-section min-h-screen py-24 relative px-4 sm:px-6 lg:px-8 flex flex-col justify-center border-t border-cyan-900/30" id="sec-murky" style="background: linear-gradient(180deg, #050c18 0%, #030812 50%, #02050c 100%);">
+<div class="max-w-6xl mx-auto w-full relative z-10">
+<!-- Depth Indicator Ribbon -->
+<div class="flex items-center gap-3 mb-8">
+<span class="px-3.5 py-1.5 rounded-full bg-cyan-500/20 border border-cyan-500/50 text-cyan-200 font-['JetBrains_Mono'] text-xs font-semibold tracking-wider uppercase inline-flex items-center gap-2 shadow-sm">
+<span class="material-symbols-outlined text-[18px] text-cyan-300">lens_blur</span>
+DEPTH: 16.0m // ZONE: TURBID BATHYAL // VISIBILITY: 0.9m OPTICAL
+</span>
+<div class="h-px flex-1 bg-gradient-to-r from-cyan-500/40 via-slate-800 to-transparent"></div>
+</div>
+<!-- Section Title Header -->
+<div class="max-w-3xl mb-12">
+<span class="font-['JetBrains_Mono'] text-xs text-cyan-300 font-bold tracking-widest uppercase">DEEP LEARNING OPTICAL RESTORATION</span>
+<h2 class="font-['Plus_Jakarta_Sans'] text-3xl sm:text-4xl font-extrabold text-white tracking-tight mt-2">
+  Cutting Through Harbor Turbidity at 30 FPS.
+</h2>
+<p class="font-['Inter'] text-base text-slate-200 mt-3 leading-relaxed">
+  Low-cost micro-ROVs transmit backscattered, green-attenuated raw footage. AquaTriage streams frames through an embedded Generative Adversarial Network that models physical light attenuation, passing crisp RGB tensors to a SeaClear-trained YOLOv8m detector in real time.
+</p>
+</div>
+<!-- 3-Phase Horizontal Architecture Pipeline -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+<!-- Step 1: Low-Cost ROV Ingestion -->
+<div class="p-6 rounded-2xl glass-panel flex flex-col justify-between relative overflow-hidden">
+<div>
+<div class="flex items-center justify-between mb-4">
+<span class="px-3 py-1 rounded bg-[#0A182A] text-cyan-300 border border-cyan-500/40 font-['JetBrains_Mono'] text-xs font-bold">PHASE 01</span>
+<span class="font-['JetBrains_Mono'] text-xs text-slate-300 font-semibold">1080P // 60FPS</span>
+</div>
+<h3 class="font-['Plus_Jakarta_Sans'] text-lg font-bold text-white">Low-Cost ROV Ingestion</h3>
+<p class="font-['Inter'] text-sm text-slate-200 mt-2 leading-relaxed">
+  Chasing M2 &amp; BlueROV2 dual acoustic-inertial uplink. Synchronizes IMU gyro coordinates, barometric depth transducer, and forward sonar pings.
+</p>
+</div>
+<div class="mt-6 p-4 rounded-xl bg-[#040810]/90 border border-cyan-500/25 font-['JetBrains_Mono'] text-xs space-y-2 shadow-inner">
+<div class="flex justify-between">
+<span class="text-slate-300">UPLINK LATENCY:</span>
+<span class="text-cyan-200 font-semibold">34.2 ms</span>
+</div>
+<div class="flex justify-between">
+<span class="text-slate-300">DEPTH VELOCITY:</span>
+<span class="text-cyan-200 font-semibold">-0.42 m/s</span>
+</div>
+<div class="flex justify-between">
+<span class="text-slate-300">HEADING LOCK:</span>
+<span class="text-emerald-300 font-semibold">214° SW [STABLE]</span>
+</div>
+</div>
+</div>
+<!-- Step 2: UW-GAN Optical Restoration -->
+<div class="p-6 rounded-2xl glass-panel flex flex-col justify-between relative overflow-hidden">
+<div>
+<div class="flex items-center justify-between mb-4">
+<span class="px-3 py-1 rounded bg-cyan-500/25 text-cyan-200 border border-cyan-500/50 font-['JetBrains_Mono'] text-xs font-bold">PHASE 02</span>
+<span class="font-['JetBrains_Mono'] text-xs text-cyan-300 font-semibold">UW-GAN ENGINE</span>
+</div>
+<h3 class="font-['Plus_Jakarta_Sans'] text-lg font-bold text-white">UW-GAN Optical Restoration</h3>
+<p class="font-['Inter'] text-sm text-slate-200 mt-2 leading-relaxed">
+  Recovers red/green spectral absorption and neutralizes heavy suspended particulate scattering at 480nm wavelength peaks.
+</p>
+</div>
+<!-- Split Before / After Visual -->
+<div class="mt-6 relative w-full h-40 rounded-xl overflow-hidden border border-cyan-500/40 flex shadow-inner">
+<div class="w-1/2 h-full bg-[#1b2b1a] p-3 flex flex-col justify-between relative">
+<span class="px-2 py-0.5 rounded bg-black/70 text-xs font-['JetBrains_Mono'] text-rose-300 font-bold self-start">RAW TURBID</span>
+<div class="w-full h-8 rounded bg-[#2a3e26] opacity-70 filter blur-sm"></div>
+<span class="text-xs font-['JetBrains_Mono'] text-slate-300">VIS: 0.8M</span>
+</div>
+<div class="w-1/2 h-full bg-[#004f54] p-3 flex flex-col justify-between relative">
+<span class="px-2 py-0.5 rounded bg-black/70 text-xs font-['JetBrains_Mono'] text-emerald-300 font-bold self-start">GAN RESTORED</span>
+<div class="w-full h-8 rounded bg-cyan-500/30 border border-cyan-400/50 flex items-center justify-center">
+<span class="font-['JetBrains_Mono'] text-xs text-cyan-100 font-bold">OBJECT RESOLVED</span>
+</div>
+<span class="text-xs font-['JetBrains_Mono'] text-emerald-300 font-semibold">SNR: +24.8 dB</span>
+</div>
+<div class="absolute left-1/2 top-0 bottom-0 w-0.5 bg-cyan-400 shadow-[0_0_10px_#22d3ee]"></div>
+</div>
+</div>
+<!-- Step 3: YOLOv8 Marine Debris Detection HUD -->
+<div class="p-6 rounded-2xl glass-panel flex flex-col justify-between relative overflow-hidden">
+<div>
+<div class="flex items-center justify-between mb-4">
+<span class="px-3 py-1 rounded bg-emerald-500/25 text-emerald-200 border border-emerald-500/50 font-['JetBrains_Mono'] text-xs font-bold">PHASE 03</span>
+<span class="font-['JetBrains_Mono'] text-xs text-emerald-300 font-semibold">ORIN NANO 15W</span>
+</div>
+<h3 class="font-['Plus_Jakarta_Sans'] text-lg font-bold text-white">YOLOv8m-SeaClear Detection</h3>
+<p class="font-['Inter'] text-sm text-slate-200 mt-2 leading-relaxed">
+  Continuous real-time multi-class detection classifies ghost fishing gear, discarded lead batteries, and submerged tires with estimated mass.
+</p>
+</div>
+<!-- ROV Simulated HUD Viewport -->
+<div class="mt-6 p-3 rounded-xl bg-[#040810]/95 border border-cyan-500/30 relative h-40 flex flex-col justify-between overflow-hidden shadow-inner">
+<div class="scan-beam"></div>
+<div class="absolute top-2 left-3 p-1.5 rounded border border-rose-500 bg-rose-500/25 shadow-[0_0_10px_rgba(244,63,94,0.3)]">
+<span class="block font-['JetBrains_Mono'] text-[11px] text-rose-200 font-bold uppercase">GHOST NET // 94.2%</span>
+<span class="block font-['JetBrains_Mono'] text-[11px] text-white">42 KG // HIGH PRIO</span>
+</div>
+<div class="absolute bottom-6 right-3 p-1.5 rounded border border-cyan-400 bg-cyan-400/25 shadow-[0_0_10px_rgba(34,211,238,0.3)]">
+<span class="block font-['JetBrains_Mono'] text-[11px] text-cyan-200 font-bold uppercase">TIRE RUBBER // 91.5%</span>
+<span class="block font-['JetBrains_Mono'] text-[11px] text-white">18 KG // MED PRIO</span>
+</div>
+<div class="absolute inset-0 flex items-center justify-center pointer-events-none opacity-25">
+<span class="material-symbols-outlined text-[44px] text-cyan-400">filter_center_focus</span>
+</div>
+<div class="z-10 mt-auto flex items-center justify-between font-['JetBrains_Mono'] text-xs text-slate-300 border-t border-cyan-500/25 pt-1.5">
+<span>FPS: <strong class="text-white">31.4</strong></span>
+<span class="text-emerald-300 font-semibold">INFERENCE: 14.8ms</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- ==========================================
+     SECTION 4 — 25.0m SEAFLOOR ZONE (OPTIMAL TSP & EXTRACTION)
+     ========================================== -->
+<section class="snap-depth-section min-h-screen py-24 relative px-4 sm:px-6 lg:px-8 flex flex-col justify-center border-t border-emerald-950/40" id="sec-seafloor" style="background: linear-gradient(180deg, #02050c 0%, #030810 50%, #010308 100%);">
+<div class="max-w-6xl mx-auto w-full relative z-10">
+<!-- Depth Indicator Ribbon -->
+<div class="flex items-center gap-3 mb-8">
+<span class="px-3.5 py-1.5 rounded-full bg-emerald-500/20 border border-emerald-500/50 text-emerald-200 font-['JetBrains_Mono'] text-xs font-semibold tracking-wider uppercase inline-flex items-center gap-2 shadow-sm">
+<span class="material-symbols-outlined text-[18px] text-emerald-300">navigation</span>
+DEPTH: 25.0m // ZONE: BENTHIC SEAFLOOR // PRESSURE: 3.50 ATA (DIVER OPERATIONAL CEILING)
+</span>
+<div class="h-px flex-1 bg-gradient-to-r from-emerald-500/40 via-slate-800 to-transparent"></div>
+</div>
+<!-- Section Title Header -->
+<div class="max-w-3xl mb-10">
+<span class="font-['JetBrains_Mono'] text-xs text-emerald-300 font-bold tracking-widest uppercase">ALGORITHMIC EXTRACTION PLANNING</span>
+<h2 class="font-['Plus_Jakarta_Sans'] text-3xl sm:text-4xl font-extrabold text-white tracking-tight mt-2">
+  Traveling Salesperson Seafloor Path Optimization.
+</h2>
+<p class="font-['Inter'] text-base text-slate-200 mt-3 leading-relaxed">
+  Instead of unguided, dangerous sweep patterns, AquaTriage compiles all YOLOv8 spatial detections into a prioritized graph. Our genetic Traveling Salesperson algorithm computes the energy-optimal dive route that maximizes retrieved mass while cutting diver swim distance by over 70%.
+</p>
+</div>
+<!-- Large Interactive Tactical Route Map Card -->
+<div class="w-full rounded-2xl glass-panel p-6 relative overflow-hidden">
+<!-- Header Bar -->
+<div class="flex flex-wrap items-center justify-between gap-4 pb-4 mb-4 border-b border-cyan-500/25">
+<div class="flex items-center gap-3">
+<span class="w-3 h-3 rounded-full bg-emerald-400 animate-ping"></span>
+<span class="font-['JetBrains_Mono'] text-base font-bold text-white drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)]">BATHYMETRIC TACTICAL OVERLAY // SECTOR MUMBAI-04</span>
+</div>
+<div class="flex items-center gap-4 font-['JetBrains_Mono'] text-xs text-slate-200">
+<span class="text-emerald-300 font-semibold">ALGORITHM: 2-OPT TSP</span>
+<span>BOTTOM CURRENT: 0.3 KNOTS NNE</span>
+</div>
+</div>
+<!-- Bathymetric Topology Vector Stage -->
+<div class="relative w-full h-80 md:h-96 rounded-xl bg-[#03060d] border border-cyan-500/30 overflow-hidden flex items-center justify-center p-4 shadow-inner">
+<div class="scan-beam" style="animation-duration: 6s;"></div>
+<svg class="w-full h-full" fill="none" viewbox="0 0 800 380">
+<defs>
+<radialgradient cx="50%" cy="50%" id="deepContours" r="50%">
+<stop offset="0%" stop-color="#00363a" stop-opacity="0.45"></stop>
+<stop offset="100%" stop-color="#02050c" stop-opacity="0.05"></stop>
+</radialgradient>
+<lineargradient id="tspEmeraldRoute" x1="0%" x2="100%" y1="0%" y2="0%">
+<stop offset="0%" stop-color="#22d3ee"></stop>
+<stop offset="50%" stop-color="#34d399"></stop>
+<stop offset="100%" stop-color="#4edea3"></stop>
+</lineargradient>
+</defs>
+<ellipse cx="400" cy="190" rx="360" ry="160" stroke="#182c44" stroke-width="1.5"></ellipse>
+<ellipse cx="400" cy="190" rx="270" ry="120" stroke="#1f3f62" stroke-width="1.2"></ellipse>
+<ellipse cx="400" cy="190" fill="url(#deepContours)" rx="180" ry="80" stroke="#2a4d70" stroke-width="1.0"></ellipse>
+<path d="M 80 190 L 220 90 L 390 130 L 530 80 L 680 190 L 540 280 L 330 260 Z" fill="rgba(78, 222, 163, 0.08)" stroke="url(#tspEmeraldRoute)" stroke-dasharray="8 4" stroke-linecap="round" stroke-width="3" style="filter: drop-shadow(0 0 8px rgba(78, 222, 163, 0.4));"></path>
+<!-- Surface Entry Anchor -->
+<g transform="translate(80, 190)">
+<circle class="animate-ping" cx="0" cy="0" fill="#22d3ee" opacity="0.3" r="14"></circle>
+<circle cx="0" cy="0" fill="#22d3ee" r="6" style="filter: drop-shadow(0 0 6px #22d3ee);"></circle>
+<text fill="#a5f3fc" font-family="JetBrains Mono" font-size="12" font-weight="700" x="14" y="4">ENTRY BUOY (0m)</text>
+</g>
+<!-- Nodes with Enhanced Text Contrast & Font Sizes -->
+<g transform="translate(220, 90)">
+<circle cx="0" cy="0" fill="#f43f5e" opacity="0.3" r="10"></circle>
+<circle cx="0" cy="0" fill="#f43f5e" r="5"></circle>
+<text fill="#fecdd3" font-family="JetBrains Mono" font-size="12" font-weight="700" x="12" y="-4">T1: GHOST NET (42kg)</text>
+<text fill="#fda4af" font-family="JetBrains Mono" font-size="11" font-weight="600" x="12" y="12">PRIORITY 1 // 18m TRAV</text>
+</g>
+<g transform="translate(390, 130)">
+<circle cx="0" cy="0" fill="#34d399" opacity="0.3" r="9"></circle>
+<circle cx="0" cy="0" fill="#34d399" r="4.5"></circle>
+<text fill="#a7f3d0" font-family="JetBrains Mono" font-size="12" font-weight="700" x="10" y="4">T2: LEAD BATTERY (12kg)</text>
+</g>
+<g transform="translate(530, 80)">
+<circle cx="0" cy="0" fill="#34d399" opacity="0.3" r="9"></circle>
+<circle cx="0" cy="0" fill="#34d399" r="4.5"></circle>
+<text fill="#a7f3d0" font-family="JetBrains Mono" font-size="12" font-weight="700" x="10" y="4">T3: NYLON CABLE (9kg)</text>
+</g>
+<g transform="translate(680, 190)">
+<circle cx="0" cy="0" fill="#34d399" opacity="0.3" r="9"></circle>
+<circle cx="0" cy="0" fill="#34d399" r="4.5"></circle>
+<text fill="#a7f3d0" font-family="JetBrains Mono" font-size="12" font-weight="700" x="-180" y="4">T4: CORRODED DRUM (35kg)</text>
+</g>
+<g transform="translate(540, 280)">
+<circle cx="0" cy="0" fill="#34d399" opacity="0.3" r="9"></circle>
+<circle cx="0" cy="0" fill="#34d399" r="4.5"></circle>
+<text fill="#a7f3d0" font-family="JetBrains Mono" font-size="12" font-weight="700" x="10" y="4">T5: MONOFILAMENT (15kg)</text>
+</g>
+<g transform="translate(330, 260)">
+<circle cx="0" cy="0" fill="#34d399" opacity="0.3" r="9"></circle>
+<circle cx="0" cy="0" fill="#34d399" r="4.5"></circle>
+<text fill="#a7f3d0" font-family="JetBrains Mono" font-size="12" font-weight="700" x="-155" y="4">T6: CRATE MATRIX (7kg)</text>
+</g>
+</svg>
+<!-- Floating Route Metrics Summary Pill -->
+<div class="absolute bottom-3 left-3 right-3 p-3.5 rounded-xl bg-[#08182b]/95 border border-emerald-500/50 backdrop-blur-md flex flex-wrap items-center justify-between gap-3 shadow-lg">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-emerald-300">route</span>
+<span class="font-['JetBrains_Mono'] text-xs sm:text-sm font-bold text-white">TOTAL OPTIMAL TRAJECTORY: 84 METERS</span>
+<span class="text-slate-300 text-xs font-['JetBrains_Mono']">(vs 310m blind sweep)</span>
+</div>
+<div class="flex items-center gap-4 font-['JetBrains_Mono'] text-xs">
+<span class="text-emerald-300 font-semibold">AIR REQ: 95 BAR</span>
+<span class="text-cyan-200 font-semibold">BOTTOM TIME: 18 MINS</span>
+<span class="text-emerald-200 font-bold bg-emerald-500/25 px-2.5 py-1 rounded border border-emerald-500/50 shadow-sm">RESERVE: +110 BAR</span>
+</div>
+</div>
+</div>
+<!-- 4-Stat Mathematical Proof Band -->
+<div class="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4">
+<div class="p-4 rounded-xl glass-card-subtle">
+<span class="font-['JetBrains_Mono'] text-xs text-slate-300 uppercase font-semibold">Distance Saved</span>
+<span class="block font-['Plus_Jakarta_Sans'] text-2xl font-bold text-emerald-300 mt-1">-72.8%</span>
+<span class="font-['JetBrains_Mono'] text-xs text-slate-300 mt-0.5">226 meters conserved</span>
+</div>
+<div class="p-4 rounded-xl glass-card-subtle">
+<span class="font-['JetBrains_Mono'] text-xs text-slate-300 uppercase font-semibold">Air Margin</span>
+<span class="block font-['Plus_Jakarta_Sans'] text-2xl font-bold text-cyan-200 mt-1">+110 BAR</span>
+<span class="font-['JetBrains_Mono'] text-xs text-slate-300 mt-0.5">Surplus ascent buffer</span>
+</div>
+<div class="p-4 rounded-xl glass-card-subtle">
+<span class="font-['JetBrains_Mono'] text-xs text-slate-300 uppercase font-semibold">Salvage Speed</span>
+<span class="block font-['Plus_Jakarta_Sans'] text-2xl font-bold text-white mt-1">3.8x</span>
+<span class="font-['JetBrains_Mono'] text-xs text-slate-300 mt-0.5">Kilograms extracted/hr</span>
+</div>
+<div class="p-4 rounded-xl glass-card-subtle">
+<span class="font-['JetBrains_Mono'] text-xs text-slate-300 uppercase font-semibold">Ecosystem Score</span>
+<span class="block font-['Plus_Jakarta_Sans'] text-2xl font-bold text-emerald-300 mt-1">A+ 98%</span>
+<span class="font-['JetBrains_Mono'] text-xs text-slate-300 mt-0.5">Zero reef disturbance</span>
+</div>
+</div>
+</div>
+<!-- Bottom Launch Banner -->
+<div class="mt-12 p-8 rounded-3xl bg-gradient-to-r from-[#08182B]/95 via-[#0A2234]/90 to-[#06181E]/95 border border-emerald-500/50 shadow-[0_16px_40px_rgba(0,0,0,0.6)] backdrop-blur-md flex flex-col md:flex-row items-center justify-between gap-8">
+<div class="flex flex-col max-w-xl text-left">
+<div class="flex items-center gap-2 mb-2">
+<span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_#34d399]"></span>
+<span class="font-['JetBrains_Mono'] text-xs text-emerald-300 uppercase tracking-widest font-bold">MISSION READINESS STATUS: NOMINAL</span>
+</div>
+<h3 class="font-['Plus_Jakarta_Sans'] text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+  Ready to Deploy Autonomous Marine Extraction?
+</h3>
+<p class="font-['Inter'] text-sm sm:text-base text-slate-200 mt-2 leading-relaxed">
+  Interface directly with your ROV serial acoustic telemetry stream or simulate the live Mumbai Harbour 25-meter benthic extraction mission.
+</p>
+</div>
+<div class="flex flex-col sm:flex-row items-center gap-3 shrink-0 w-full md:w-auto">
+<a class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-4 rounded-xl bg-emerald-400 text-slate-950 font-['JetBrains_Mono'] text-sm uppercase font-bold shadow-[0_0_25px_rgba(52,211,153,0.55)] hover:bg-emerald-300 hover:shadow-[0_0_35px_rgba(52,211,153,0.8)] active:scale-95 transition-all" href="#sec-surface">
+<span class="material-symbols-outlined text-[20px]">terminal</span>
+<span>Launch Mumbai Harbour Live Command Center →</span>
+</a>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- ==========================================
+     FOOTER
+     ========================================== -->
+<footer class="w-full bg-[#03060d] border-t border-cyan-900/40 py-10 px-4 sm:px-6 lg:px-8">
+<div class="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+<div class="flex items-center gap-3 text-slate-300 font-['JetBrains_Mono'] text-xs font-medium">
+<div class="w-6 h-6 rounded bg-cyan-500/20 border border-cyan-400/40 flex items-center justify-center text-cyan-300">
+<span class="material-symbols-outlined text-[16px]">radar</span>
+</div>
+<span>AQUATRIAGE // AUTONOMOUS MARINE TRIAGE &amp; BATHYMETRIC TELEMETRY ARCHITECTURE</span>
+</div>
+<div class="flex items-center gap-6 text-slate-300 font-['JetBrains_Mono'] text-xs font-medium">
+<span>DATUM: WGS-84</span>
+<span>UPLINK: 48.2 KBPS</span>
+<span class="text-emerald-300 font-semibold">SECURE COMM LAYER ACTIVE</span>
+</div>
+</div>
+</footer>
+<!-- ==========================================
+     DYNAMIC DEPTH KNOB & TELEMETRY SCRIPT
+     ========================================== -->
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const rail = document.getElementById('depthRail');
+    const knob = document.getElementById('depthTrackerKnob');
+    const badge = document.getElementById('activeDepthBadge');
+    const depthVal = document.getElementById('activeDepthValue');
+    const pressureVal = document.getElementById('activePressureValue');
+
+    if (!rail || !knob || !depthVal || !pressureVal) return;
+
+    let isDragging = false;
+
+    // Define 4 anchor zones
+    const zones = [
+      { id: 'sec-surface', depth: 0.0, ata: 1.00 },
+      { id: 'sec-twilight', depth: 8.0, ata: 1.80 },
+      { id: 'sec-murky', depth: 16.0, ata: 2.60 },
+      { id: 'sec-seafloor', depth: 25.0, ata: 3.50 }
+    ];
+
+    function calculateCurrentDepth() {
+      const scrollY = window.pageYOffset || document.documentElement.scrollTop;
+      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+      if (docHeight <= 0) return 0;
+
+      // Section-based progressive mapping
+      const secElements = zones.map(z => document.getElementById(z.id));
+      const secTops = secElements.map(el => el ? el.offsetTop - 120 : 0);
+
+      if (scrollY <= secTops[0]) return 0.0;
+      if (scrollY >= secTops[secTops.length - 1]) return 25.0;
+
+      for (let i = 0; i < secTops.length - 1; i++) {
+        if (scrollY >= secTops[i] && scrollY < secTops[i + 1]) {
+          const ratio = (scrollY - secTops[i]) / (secTops[i + 1] - secTops[i]);
+          return zones[i].depth + ratio * (zones[i + 1].depth - zones[i].depth);
+        }
+      }
+      return (scrollY / docHeight) * 25.0;
+    }
+
+    function updateDepthUI(depth, fromInteraction = false) {
+      depth = Math.max(0, Math.min(25, depth));
+      const percentage = (depth / 25.0) * 100;
+      
+      // Update knob position dynamically as percentage
+      knob.style.top = percentage + '%';
+      rail.setAttribute('aria-valuenow', depth.toFixed(1));
+
+      // Calculate pressure in ATA (1 ATA at surface + 0.1 ATA per meter)
+      const ata = (1.0 + (depth * 0.1)).toFixed(2);
+
+      depthVal.textContent = depth.toFixed(1) + ' m';
+      pressureVal.textContent = ata + ' ATA';
+
+      if (fromInteraction) {
+        // Scroll the viewport to match the interactively set depth
+        const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+        const targetScroll = (depth / 25.0) * docHeight;
+        window.scrollTo({
+          top: targetScroll,
+          behavior: 'smooth'
+        });
+      }
+    }
+
+    function handleRailPointer(e) {
+      const rect = rail.getBoundingClientRect();
+      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+      const relativeY = Math.max(0, Math.min(rect.height, clientY - rect.top));
+      const fraction = relativeY / rect.height;
+      const targetDepth = fraction * 25.0;
+      updateDepthUI(targetDepth, true);
+    }
+
+    // Scroll listener for natural scrolling updates
+    window.addEventListener('scroll', function() {
+      if (!isDragging) {
+        const d = calculateCurrentDepth();
+        updateDepthUI(d, false);
+      }
+    }, { passive: true });
+
+    // Click & Drag on Rail
+    rail.addEventListener('mousedown', function(e) {
+      isDragging = true;
+      handleRailPointer(e);
+    });
+
+    window.addEventListener('mousemove', function(e) {
+      if (isDragging) {
+        e.preventDefault();
+        handleRailPointer(e);
+      }
+    });
+
+    window.addEventListener('mouseup', function() {
+      isDragging = false;
+    });
+
+    // Touch support for tablets/laptops with touchscreens
+    rail.addEventListener('touchstart', function(e) {
+      isDragging = true;
+      handleRailPointer(e);
+    }, { passive: true });
+
+    window.addEventListener('touchmove', function(e) {
+      if (isDragging) {
+        handleRailPointer(e);
+      }
+    }, { passive: true });
+
+    window.addEventListener('touchend', function() {
+      isDragging = false;
+    });
+
+    // Keyboard accessibility for slider
+    rail.addEventListener('keydown', function(e) {
+      let currentVal = parseFloat(rail.getAttribute('aria-valuenow')) || 0;
+      if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
+        e.preventDefault();
+        updateDepthUI(Math.min(25, currentVal + 1), true);
+      } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
+        e.preventDefault();
+        updateDepthUI(Math.max(0, currentVal - 1), true);
+      } else if (e.key === 'Home') {
+        e.preventDefault();
+        updateDepthUI(0, true);
+      } else if (e.key === 'End') {
+        e.preventDefault();
+        updateDepthUI(25, true);
+      }
+    });
+
+    // Initial sync
+    const initialDepth = calculateCurrentDepth();
+    updateDepthUI(initialDepth, false);
+  });
+</script>
+</body></html>
