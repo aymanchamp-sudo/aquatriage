@@ -1,3 +1,14 @@
+---
+title: AquaTriage
+emoji: 🌊
+colorFrom: blue
+colorTo: indigo
+sdk: docker
+app_port: 7860
+pinned: false
+license: mit
+---
+
 # AquaTriage - Backend
 
 Detects underwater debris in ROV/diver frames using a pretrained MBARI YOLOv8 model,

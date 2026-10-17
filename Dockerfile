@@ -20,8 +20,10 @@ FROM python:3.12-slim AS runner
 # Prevent Python from writing .pyc files and enable unbuffered logging
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
-    PORT=8000 \
-    HOST=0.0.0.0
+    PORT=7860 \
+    HOST=0.0.0.0 \
+    MPLCONFIGDIR=/tmp/matplotlib \
+    YOLO_CONFIG_DIR=/tmp/ultralytics
 
 # Install system dependencies required for OpenCV and image operations
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -48,12 +50,17 @@ RUN python -m backend.scripts.download_model
 # Copy compiled frontend from Stage 1 into frontend/dist for FastAPI SPA serving
 COPY --from=frontend-builder /app/frontend/dist ./frontend/dist
 
-# Expose server port (Render / Railway override via $PORT)
+# Ensure directories are writable for container runners
+RUN mkdir -p /tmp/matplotlib /tmp/ultralytics && chmod -R 777 /tmp /app
+
+# Expose server ports (7860 for Hugging Face Spaces, 10000 for Render, dynamic for Railway)
+EXPOSE 7860
 EXPOSE 8000
 
 # Healthcheck for container orchestrators
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
-    CMD curl -f http://localhost:${PORT:-8000}/api/health || exit 1
+    CMD curl -f http://localhost:${PORT:-7860}/api/health || exit 1
 
 # Start Uvicorn bound to 0.0.0.0 and dynamic $PORT
-CMD ["sh", "-c", "uvicorn backend.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
+CMD ["sh", "-c", "uvicorn backend.main:app --host 0.0.0.0 --port ${PORT:-7860}"]
+

@@ -3,7 +3,7 @@ services:
     name: aquatriage
     runtime: docker
     dockerfilePath: Dockerfile
-    plan: standard
+    plan: free
     region: oregon
     healthCheckPath: /api/health
     envVars:
