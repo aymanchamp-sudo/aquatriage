@@ -148,8 +148,7 @@ C:\aquatriage\
 |   +-- test_backend.py  # 24 pytest unit tests
 +-- Dockerfile           # Multi-stage production container (React + FastAPI)
 +-- docker-compose.yml   # Production Compose configuration
-+-- render.yaml          # 1-Click Render blueprint
-+-- railway.json         # Railway deployment configuration
++-- vercel.json          # 1-Click Vercel frontend deployment configuration
 +-- requirements.txt
 +-- pytest.ini
 +-- README.md
@@ -157,9 +156,34 @@ C:\aquatriage\
 
 ---
 
-## Production Deployment (Full Stack)
+## Deployment & Development Guide
 
-AquaTriage is configured for **single-container unified deployment** hosting both the React frontend and the FastAPI backend on a single port with no CORS overhead.
+AquaTriage is designed with a **cloud-ready React frontend on Vercel** and a **local FastAPI + PyTorch backend** for high-performance YOLOv8x inference.
+
+### 1. Deploy Frontend to Vercel (100% Free)
+
+1. Push your repository to GitHub.
+2. In the [Vercel Dashboard](https://vercel.com/new):
+   - Select and import `aymanchamp-sudo/aquatriage`.
+   - Vercel automatically detects [`vercel.json`](file:///c:/Users/ayman/OneDrive/Desktop/aquatriage/vercel.json) and configures the build settings.
+   - Click **Deploy**.
+3. Your frontend is instantly live on a global CDN (e.g., `https://aquatriage.vercel.app`) with complete offline fallback datasets.
+
+### 2. Connect Your Local Backend to Vercel (Optional)
+
+If you want your Vercel deployment to communicate with your live local PyTorch YOLOv8x backend:
+1. Run the local backend:
+   ```powershell
+   uvicorn backend.main:app --port 8000
+   ```
+2. Expose port 8000 via a free public tunnel:
+   ```powershell
+   npx localtunnel --port 8000
+   ```
+3. In your Vercel project settings (**Settings** -> **Environment Variables**), add:
+   - `VITE_API_BASE_URL` = `https://your-tunnel-url.loca.lt`
+   - Redeploy or trigger a new build.
+
 
 ### Option 1: Deploy on Render
 
