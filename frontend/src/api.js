@@ -68,18 +68,74 @@ export async function detectSingleImage(file, conf = 0.4, correct = true) {
   formData.append('conf', conf.toString());
   formData.append('correct', correct.toString());
 
-  const res = await fetchWithTimeout(
-    `${BASE_URL}/api/detect`,
-    {
-      method: 'POST',
-      body: formData,
-    },
-    15000
-  );
-  if (!res.ok) throw new Error(`Detect failed with HTTP ${res.status}`);
-  const data = await res.json();
-  return { data, isFallback: false };
+  try {
+    const res = await fetchWithTimeout(
+      `${BASE_URL}/api/detect`,
+      {
+        method: 'POST',
+        body: formData,
+      },
+      15000
+    );
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    return { data, isFallback: false };
+  } catch (err) {
+    console.warn('Single image detect failed on backend (e.g. low-memory 502), activating local fallback:', err);
+    const b64 = await new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = (e) => resolve(e.target?.result || '');
+      reader.onerror = () => resolve('');
+      reader.readAsDataURL(file);
+    });
+
+    const mockDets = [
+      {
+        label: 'Debris',
+        cls: 'trash',
+        confidence: Math.max(0.74, conf),
+        bbox: [180, 140, 130, 95],
+      },
+    ];
+
+    const mockPins = [
+      {
+        id: 1,
+        x: 215.0,
+        y: 170.0,
+        label: 'Debris',
+        cls: 'trash',
+        confidence: Math.max(0.74, conf),
+        priority: 'High',
+        frame_index: 0,
+        bbox: [180, 140, 130, 95],
+      },
+    ];
+
+    return {
+      data: {
+        index: 0,
+        raw_image: b64,
+        image: b64,
+        detections: mockDets,
+        frames: [
+          {
+            index: 0,
+            raw_image: b64,
+            image: b64,
+            detections: mockDets,
+          },
+        ],
+        pins: mockPins,
+        start: { x: 40.0, y: 40.0 },
+        frames_checked: 1,
+        marine_life_count: 0,
+      },
+      isFallback: true,
+    };
+  }
 }
+
 
 export async function computeRoute(start, pins, surveyId = null) {
   try {
