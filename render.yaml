@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: aquatriage
+    runtime: docker
+    dockerfilePath: Dockerfile
+    plan: standard
+    region: oregon
+    healthCheckPath: /api/health
+    envVars:
+      - key: PORT
+        value: 10000
+      - key: PYTHONUNBUFFERED
+        value: 1
+      - key: ALLOWED_ORIGINS
+        value: "*"

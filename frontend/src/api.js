@@ -2,7 +2,7 @@
  * AquaTriage API Client with 10s timeout and automatic local fallback
  */
 
-const BASE_URL = '';
+const BASE_URL = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/+$/, '');
 
 async function fetchWithTimeout(resource, options = {}, timeoutMs = 10000) {
   const controller = new AbortController();

@@ -134,9 +134,54 @@ C:\aquatriage\
 +-- frontend/
 |   +-- public/fallback/ # Pre-computed JSONs (survey*.json + *_route.json)
 +-- tests/
-|   +-- test_backend.py  # 20 pytest unit tests
-+-- .venv/
+|   +-- test_backend.py  # 24 pytest unit tests
++-- Dockerfile           # Multi-stage production container (React + FastAPI)
++-- docker-compose.yml   # Production Compose configuration
++-- render.yaml          # 1-Click Render blueprint
++-- railway.json         # Railway deployment configuration
 +-- requirements.txt
 +-- pytest.ini
 +-- README.md
 ```
+
+---
+
+## Production Deployment (Full Stack)
+
+AquaTriage is configured for **single-container unified deployment** hosting both the React frontend and the FastAPI backend on a single port with no CORS overhead.
+
+### Option 1: Deploy on Render
+
+1. Push your repository to GitHub:
+   ```bash
+   git add .
+   git commit -m "Add full-stack deployment configuration"
+   git push origin main
+   ```
+2. In the [Render Dashboard](https://dashboard.render.com/):
+   - Click **New +** -> **Blueprint**.
+   - Select your repository `aymanchamp-sudo/aquatriage`.
+   - Render automatically detects `render.yaml` and provisions the Docker Web Service.
+   - Click **Apply**.
+3. *Note on RAM:* Render standard instance (or 1GB+ RAM plan) is recommended because YOLOv8x inference is memory-intensive.
+
+### Option 2: Deploy on Railway
+
+1. Push your repository to GitHub.
+2. In the [Railway Dashboard](https://railway.app/):
+   - Click **New Project** -> **Deploy from GitHub repo**.
+   - Select `aymanchamp-sudo/aquatriage`.
+   - Railway detects `Dockerfile` and builds the service automatically.
+   - In service settings, generate a domain under **Networking**.
+
+### Option 3: Run Locally or on a VPS with Docker Compose
+
+```bash
+# Build and run containerized production app
+docker compose up --build
+
+# Open application
+http://localhost:8000
+```
+Model weights (~130 MB) are automatically fetched from Hugging Face / HF-mirror during container build or at startup if not present.
+

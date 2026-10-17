@@ -187,3 +187,12 @@ class TestDetectEndpoint:
         assert "frames" in data
         assert len(data["frames"]) == 1
 
+
+class TestHealthEndpoint:
+    def test_health_check(self, client):
+        res = client.get("/api/health")
+        assert res.status_code == 200
+        data = res.json()
+        assert data["status"] == "healthy"
+        assert "AquaTriage" in data["service"]
+

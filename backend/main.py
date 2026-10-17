@@ -3,6 +3,7 @@ AquaTriage FastAPI backend – main entry point.
 Run: uvicorn backend.main:app --port 8000
 """
 
+import os
 import pathlib
 from contextlib import asynccontextmanager
 
@@ -10,6 +11,8 @@ import cv2
 import numpy as np
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from backend.core import (
@@ -35,6 +38,12 @@ def get_model():
     global _MODEL
     if _MODEL is None:
         from ultralytics import YOLO
+        if not MODEL_PATH.exists() or MODEL_PATH.stat().st_size < 100_000_000:
+            try:
+                from backend.scripts.download_model import ensure_model
+                ensure_model(MODEL_PATH)
+            except Exception as e:
+                print(f"Warning: could not ensure model file: {e}")
         _MODEL = YOLO(str(MODEL_PATH))
     return _MODEL
 
@@ -52,9 +61,19 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="AquaTriage API", lifespan=lifespan)
 
+allowed_origins_env = os.getenv("ALLOWED_ORIGINS", "").strip()
+if allowed_origins_env and allowed_origins_env != "*":
+    origins = [o.strip() for o in allowed_origins_env.split(",") if o.strip()]
+    allow_credentials = True
+else:
+    # Allow all origins by default for seamless cloud deployment
+    origins = ["*"]
+    allow_credentials = False
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
+    allow_origins=origins,
+    allow_credentials=allow_credentials,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -223,3 +242,31 @@ class RouteRequest(BaseModel):
 @app.post("/api/route")
 def plan_route(req: RouteRequest):
     return compute_route(req.start, req.pins)
+
+
+@app.get("/api/health")
+def health_check():
+    return {
+        "status": "healthy",
+        "service": "AquaTriage API",
+        "model_loaded": _MODEL is not None,
+    }
+
+
+# ---------------------------------------------------------------------------
+# Static frontend serving (Single-service deployment mode)
+# ---------------------------------------------------------------------------
+DIST_DIR = BACKEND_DIR.parent / "frontend" / "dist"
+if DIST_DIR.exists():
+    if (DIST_DIR / "assets").exists():
+        app.mount("/assets", StaticFiles(directory=str(DIST_DIR / "assets")), name="assets")
+
+    @app.get("/{full_path:path}")
+    async def serve_spa(full_path: str):
+        if full_path.startswith("api") or full_path.startswith("docs") or full_path.startswith("openapi.json"):
+            raise HTTPException(status_code=404, detail="Not Found")
+        candidate = DIST_DIR / full_path
+        if full_path and candidate.is_file():
+            return FileResponse(candidate)
+        return FileResponse(DIST_DIR / "index.html")
+

@@ -1,0 +1,18 @@
+.git/
+.gitignore
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+tests/
+runs/
+trashcan/
+Step 0.pdf
+frontend/node_modules/
+frontend/dist/
+.env*
+mcp/
+.agents/
+.gemini/
